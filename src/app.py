@@ -38,6 +38,42 @@ activities = {
         "schedule": "Mondays, Wednesdays, Fridays, 2:00 PM - 3:00 PM",
         "max_participants": 30,
         "participants": ["john@mergington.edu", "olivia@mergington.edu"]
+    },
+    "Basketball Team": {
+        "description": "Competitive basketball team for school tournaments",
+        "schedule": "Tuesdays and Thursdays, 4:00 PM - 6:00 PM",
+        "max_participants": 15,
+        "participants": ["alex@mergington.edu", "sarah@mergington.edu"]
+    },
+    "Track and Field": {
+        "description": "Running, jumping, and throwing events training",
+        "schedule": "Mondays and Wednesdays, 3:00 PM - 5:00 PM",
+        "max_participants": 25,
+        "participants": ["ryan@mergington.edu", "mia@mergington.edu"]
+    },
+    "Art Club": {
+        "description": "Painting, drawing, and sculpture workshops",
+        "schedule": "Wednesdays, 3:30 PM - 5:30 PM",
+        "max_participants": 16,
+        "participants": ["lucy@mergington.edu", "david@mergington.edu"]
+    },
+    "Drama Club": {
+        "description": "Acting, theater production, and performance arts",
+        "schedule": "Tuesdays and Fridays, 3:00 PM - 5:00 PM",
+        "max_participants": 18,
+        "participants": ["zoe@mergington.edu", "ethan@mergington.edu"]
+    },
+    "Science Olympiad": {
+        "description": "Competitive science and engineering problem solving",
+        "schedule": "Thursdays, 3:30 PM - 5:30 PM",
+        "max_participants": 14,
+        "participants": ["anna@mergington.edu", "jacob@mergington.edu"]
+    },
+    "Debate Team": {
+        "description": "Develop public speaking and argumentation skills",
+        "schedule": "Mondays and Fridays, 3:30 PM - 4:30 PM",
+        "max_participants": 10,
+        "participants": ["grace@mergington.edu", "noah@mergington.edu"]
     }
 }
 
@@ -52,16 +88,43 @@ def get_activities():
     return activities
 
 
-@app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
-    """Sign up a student for an activity"""
+
+from fastapi import Request
+from pydantic import BaseModel
+
+class SignupRequest(BaseModel):
+    activity: str
+    email: str
+
+class UnregisterRequest(BaseModel):
+    activity: str
+    email: str
+
+@app.post("/signup")
+def signup_for_activity(req: SignupRequest):
+    activity_name = req.activity
+    email = req.email
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
-
-    # Get the specific activity
     activity = activities[activity_name]
-
+    # Validate student is not already signed up
+    if email in activity["participants"]:
+        raise HTTPException(status_code=400, detail="Student is already signed up")
     # Add student
     activity["participants"].append(email)
     return {"message": f"Signed up {email} for {activity_name}"}
+
+@app.post("/unregister")
+def unregister_from_activity(req: UnregisterRequest):
+    activity_name = req.activity
+    email = req.email
+    # Validate activity exists
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    activity = activities[activity_name]
+    # Validate student is signed up
+    if email not in activity["participants"]:
+        raise HTTPException(status_code=400, detail="Student not found in participants")
+    activity["participants"].remove(email)
+    return {"message": f"Removed {email} from {activity_name}"}
